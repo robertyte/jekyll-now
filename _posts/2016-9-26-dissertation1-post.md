@@ -1,6 +1,6 @@
 ---
 layout: post
-title: From dissertation #1. About goal, complexities and approach
+title: From dissertation No.1. About goal, complexities and approach
 ---
 
 The aim of my dissertation was...
