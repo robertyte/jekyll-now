@@ -11,10 +11,15 @@ I have analysed life-threatening genetic condition which occurs in about 1 in 10
 Analysed data set comprised of 165 million patients and possesed severe factual imbalance of cases to controls (1:138,000). Data encompassed medical history events which were described by 240 variables.
 
 The research was divided into following main parts: 
+
   - Exploratory data analysis, 
+  
   - Experimental Phases I. Supervised learning classifiers, 
+  
   - Experimental Phases II. Tackling imbalance, 
+  
   - Experimental Phases III. Classifiers’ ensembles, 
+  
   - Feasibility assessment of predictive model’s deployment. 
 
 Six supervised learning algorithms - logistic regression, SVM with RBF kernel, Decision Tree, Random Forest, AdaBoost, and Naïve Bayes - and unsupervised One Class SVM were tested. As well PCA and recursive feature elimination (RFE) techniques were used to reduce dimensionality and explore feature importance. For tackling imbalance Parallel Selective Sampling (PSS) method was reproduced in Apache Spark implementation. Finally, the majority voting rule for models ensemble and unique cascade ensemble were explored.
