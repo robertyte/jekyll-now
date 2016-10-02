@@ -4,7 +4,7 @@ title: DISS-1. About goals, complexities and approach
 tag: []
 ---
 
-My dissertation investigates machine learning approaches to detect rare hereditary diseases retrospectively studying large population cohorts. Rare diseases are diseases which affect a small number of people (1 out of 2,000). Specific issues are raised in relation to their rarity: many patients are not diagnosed, the diagnosis is delayed or wrongly determined resulting in inappropriate treatments. Therefore a tremendous need to investigate novel machine learning tools exists to enable early and more accurate rare disease detection. 
+**My dissertation** investigates machine learning approaches to detect rare hereditary diseases retrospectively studying large population cohorts. Rare diseases are diseases which affect a small number of people (1 out of 2,000). Specific issues are raised in relation to their rarity: many patients are not diagnosed, the diagnosis is delayed or wrongly determined resulting in inappropriate treatments. Therefore a tremendous need to investigate novel machine learning tools exists to enable early and more accurate rare disease detection. 
 
 I have analysed life-threatening genetic condition which occurs in about 1 in 10,000 to 1 in 150,000 people worldwide (for confidentiality reasons I will not disclose the name of the disease, instead hereinafter, it will be called 'the condition'). My study shows, for the first time in the literature, the use of machine learning techniques aimed to capture early flags of the condition to provide clinical decision support for clinicians. 
 
