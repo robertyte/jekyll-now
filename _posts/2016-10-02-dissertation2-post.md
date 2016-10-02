@@ -1,7 +1,9 @@
 ---
 layout: post
-title: DISS-2. Pipeline for training and testing classifier
+title: DISS-2. Pipeline for training and testing a classifier
 tag: []
 ---
 
-Here I provide a correct approach to train and test your classifier for research purposes.
+A good practice to evaluate your classifier is to grid search, train and test it many many times and then average the results. 
+
+![Alt Text](../path/image.ext)
