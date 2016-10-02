@@ -11,7 +11,7 @@ I have analysed life-threatening genetic condition which occurs in about 1 in 10
 Analysed data set comprised of 165 million patients and possesed severe factual imbalance of cases to controls (1:138,000). Data encompassed medical history events which were described by 240 variables.
 
 The research was divided into following main parts:
-* Exploratory data analysis 
++ Exploratory data analysis 
 * Experimental Phases I. Supervised learning classifiers, 
 * Experimental Phases II. Tackling imbalance, 
 * Experimental Phases III. Classifiers’ ensembles. 
