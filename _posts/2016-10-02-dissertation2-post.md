@@ -6,4 +6,4 @@ tag: []
 
 A good practice to evaluate your classifier is to grid search, train and test it many many times and then average the results. 
 
-![Alt Text](../images/ClassifierTestingPipeline.JPG)
+![Try something new](../images/ClassifierTestingPipeline.JPG)
