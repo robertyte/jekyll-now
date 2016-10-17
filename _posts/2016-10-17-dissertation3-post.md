@@ -17,13 +17,14 @@ Below I share code stubs for plotting averaged ROC Space curve, similar to one a
 
 
 ```python
-def ROCSpace_1point(pred_truthLabels):
+def ROCSpace_1point(pred_truthLabels, model):
     '''
     This function takes as input predefined dataframe with results of experimental runs for one classifier 
     and returns a plot of averaged ROC space curve.
     pred_truthLabels: dataframe - for one classifier containing 2 columns: 'Truth' with lists of true labels and 
-    'PredLabels' with lists of predicted labels, each row represents different iteration of experiment, 
+    'PredLabels' with lists of predicted labels from test subsets. Each row represents different iteration of experiment, 
     eg. if experiment was run 100 times there should be 100 rows in the dataframe.
+    model: string - name of classifier.
     '''
 
     plt.figure(figsize=[10,10])
