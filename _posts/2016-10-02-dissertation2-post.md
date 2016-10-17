@@ -18,6 +18,7 @@ In the scientific articles I have seen very wide range of iterations (from 10 to
 
 ```python
 def ClassificationCVAndShuffleSplit(X, y, iterations):
+    # The function runs gcross validated grid search for 6 chosen classifiers multiple times and returns dataframe with AUC results.
     # X: pandas dataframe - data set with independent variables. 
     # y: list,array - dependent variable
     # iterations: integer - number of random train/test splits
