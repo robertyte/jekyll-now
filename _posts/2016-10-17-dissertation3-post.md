@@ -4,76 +4,71 @@ title: DISS-3. ROC Space curve
 tag: []
 ---
 
-A good practice to evaluate your classifier is to grid search, train and test it many many times. 
+Since now we have evaluation results from many iterations, we would like to check how stable they are. That's what the ROC Space curve is for. 
 
 ![ROC Space curve](../images/ROCplot_Exp1_positive&negative.png)
 
-In this post I will not delve into explaining the saint train-test-evaluate triology, neither will dig into elaborating the mechanics of k-fold cross-validation or grid search because I assume it is must-know basics of which readers are already aware. Instead in this post I want to emphasize the importance to run train-test-evaluate procedure for many times as the image above suggests. This will give you the true picture on how stable is your classifier and how capable it is to capture the true underlying patterns and not the noise. Actually, this was my very first big lesson learned when I started the dissertation, because at the beginning I thought one run with cross-validated grid search will suffice. 
+In addition to averaged AUC, specificity and sensitivity as a performance diagnostics I plotted averaged ROC Space curve. It represents averaged sensitivity and specificity metrics over number of iterations on ROC plot with 95% confidence interval error bars.
+I used simplified version of ROC Space curve with only one point depicted. Nevrtheless, more sophisticated versions of averaging ROC Space curves exist - merging all iterations into 1 curve, vertical averaging, threshold averaging <sup>1</sup>.
 
-Have in mind that the first step of rebalancing might be necessary only in case of higher class imbalance (I'd say above 1:10). As well training and hold out (evaluation) subsets can be split in different proportions (in most of the cases training data should be bigger), the same applies for choosing k for k-fold cross-validation. 
+The interpretation of such curve is straight forward - the most desirable performance outcome would result in dots placed on the furthest upper left corner with narrow confidence intervals. In our case the error bars are sufficiently narrow confirming stable performance of classifiers per varying train/test splits, though the true positive rate (or sensitivity) is too low.
 
-**But how many times to iterate the procedure?**
-In the scientific articles I have seen very wide range of iterations (from 10 to hundreds), but my supervisor would always say that >1,000 is what should be sought in research. I'd say it depends on circumstances: the goal or complexity of the research topic, data size, time you have to run experiments, machines you use, stability and complexity of algorithms and, of course, what level of research perfection you want to achieve. I ran my experiments for 20-50 times. My standard deviations of evaluation metrics were very low, indicating that models are stable, thus running additional 950 times most likely would not add anything new to it. In commercial environment most likely you would aim for quicker but not necessarily perfect results, thus number of runs could even be as low as few ot ten.
+Below I share the code stubs for plotting avergaed ROC Space curve, as shown above in the image.
 
 
 ```python
-def ClassificationCVAndShuffleSplit(X, y, iterations):
-    '''
-     The function runs gcross validated grid search for 6 chosen classifiers multiple times and
-     returns dataframe with AUC results.
-     X: pandas dataframe - data set with independent variables. 
-     y: list,array - dependent variable
-     iterations: integer - number of runs of experiment
-    '''
+def ROCSpace_1point(title, expNo, filepath_AllOther, likelyOrNonlikely):
+    # title: string - title of the chart
+    # expNo: integer - experiment integer [1,2,3,4]
+    # filepath_AllOther: string - url to the files with experiment results
+    # likelyOrNonlikely: integer - 0 for likely, or 1 for nonlikely - to specify the controls 
+    models = [
+    'Logistic regression',
+    'RBF SVM',
+    'Decision Tree',
+    'Random Forest',
+    'AdaBoost',
+    'Naive Bayes'
+    ]
 
-    names = [ 
-            "Logistic_regression", 
-            "RBF_SVM", 
-            "Decision_Tree",
-            "Random_Forest", 
-            "AdaBoost", 
-            "Naive_Bayes"
-            ]
-    classifiers = [
-        LogisticRegression(penalty = 'l2'),
-        Pipeline([("normalize", preprocessing.Normalizer(norm='l2')), ("svm", SVC(gamma=0.01, C=0.11, probability= True))]),
-        DecisionTreeClassifier(max_depth=5),
-        RandomForestClassifier(max_depth=5, n_estimators=10, n_jobs=6),
-        AdaBoostClassifier(),
-        GaussianNB()
-        ]
+    exp = [['Exp1_HAEpositive&likely.csv','Exp1_HAEpositive&nonlikely.csv'],
+       ['Exp2_HAEpositive&likely.csv','Exp2_HAEpositive&nonlikely.csv'],
+       ['Exp3_HAEpositive&likely.csv','Exp3_HAEpositive&nonlikely.csv'],
+       ['Exp4_HAEpositive&likely.csv','Exp4_HAEpositive&nonlikely.csv']
+    ]
+    
+    usecols_AllOther = [[0,2,3],[5,7,8],[10,12,13],[15,17,18],[20,22,23],[25,27,28]]
 
-    parameters = {
-        'Logistic_regression': dict(penalty=['l2']),
-        'RBF_SVM': dict(svm__C=[10,100,1000,10000,100000], svm__gamma=[0.01,0.1,1,10,100]),
-        'Decision_Tree':dict(max_depth=[5, 10, 50, 100]),
-        'Random_Forest': dict(max_depth=[5, 10, 50], n_estimators=[10, 50, 100]),
-        "AdaBoost": dict(n_estimators=[10, 50, 100]),
-        "Naive_Bayes": dict()
-    }
+    plt.figure(figsize=[10,10])
+    df = pd.DataFrame(index=models, columns=['AUC_mean','AUC_std','Sensitivity','Specificity'])
 
-    index = np.arange(0,iterations,1)
-    columns = [name+'_auc' for name in names]
-    exp = pd.DataFrame(index=index, columns=columns)
-    rs = cross_validation.ShuffleSplit(len(y), n_iter=iterations, test_size=.25, random_state=0)
-    i =0
-    y = np.array(y)
-    for train_index, test_index in rs:
-        for name, clf in zip(names, classifiers):
-                # prepare train and test data
-                X_train = X.iloc[train_index] 
-                y_train = y[train_index]
-                X_test = X.iloc[test_index]
-                y_test = y[test_index]
-                # train classifier
-                clf_parameters = parameters[name]
-                clf_GS = GridSearchCV(clf, clf_parameters, cv=4, scoring='roc_auc', n_jobs = 6)
-                clf_GS.fit(X_train, y_train)
-                # predict probabilities of class 1 in the test set
-                pred_prob = clf_GS.predict_proba(X_test)[:,1]
-                # evaluate classification models with AUC
-                auc = metrics.roc_auc_score(y_test, pred_prob)
-                exp.loc[i,name+'_auc']=auc
-        i +=1        
-    return exp
+    for i, model in enumerate(models):
+        pred_truthLabels = pd.read_csv(filepath_AllOther+exp[expNo-1][likelyOrNonlikely], usecols = usecols_AllOther[i], header=None, names=['AUC','PredLabels','Truth'])
+        pred_truthLabels['PredLabels'] = pred_truthLabels['PredLabels'].apply(lambda x: [float(i) for i in x.split()])
+        pred_truthLabels['Truth'] = pred_truthLabels['Truth'].apply(lambda x: [float(i) for i in x.split()])
+
+        pred_truthLabels['Sensitivity'] = pred_truthLabels.apply(lambda x: metrics.recall_score(x['Truth'],x['PredLabels']), axis=1)
+        pred_truthLabels['Specificity'] = pred_truthLabels.apply(lambda x: 1.0-metrics.roc_curve(x['Truth'],x['PredLabels'])[0][1], axis=1)
+
+        xerror= 1.96*(1.0-pred_truthLabels['Specificity']).std()/np.sqrt(pred_truthLabels.shape[0])
+        yerror = 1.96*pred_truthLabels['Sensitivity'].std()/np.sqrt(pred_truthLabels.shape[0])
+        xmean = (1.0-pred_truthLabels['Specificity']).mean()
+        ymean = pred_truthLabels['Sensitivity'].mean()
+        plt.errorbar([0,xmean,1], [0,ymean,1], 
+                     yerr=[[0,yerror,0], [0,yerror,0]], xerr=[[0,xerror,0], [0,xerror,0]], 
+                     linestyle = ':',elinewidth=2,linewidth = 1, label =model)
+        df.ix[model,'AUC_mean'] = round(pred_truthLabels['AUC'].mean(), 4)
+        df.ix[model,'AUC_std'] = round(pred_truthLabels['AUC'].std(), 4)
+        df.ix[model,'Sensitivity'] = round(ymean, 4)
+        df.ix[model,'Specificity'] = round(pred_truthLabels['Specificity'].mean(),4)
+
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.legend(loc='lower right')
+    plt.xlabel('False positive rate')
+    plt.ylabel('True positive rate')
+    plt.title(title)
+    plt.savefig(filepath_AllOther+'ROCplot_'+exp[expNo-1][likelyOrNonlikely][0:-4])
+    plt.show()
+    df.to_csv(path_or_buf=filepath_AllOther+'Analysis_'+exp[expNo-1][likelyOrNonlikely])
 ```
+<sup>1</sup> Fawcett, T. (2005) "An introduction to ROC analysis". Pattern Recognition Letters 27 (2006) 861–874.
