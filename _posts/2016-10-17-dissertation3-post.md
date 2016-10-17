@@ -6,7 +6,7 @@ tag: []
 
 A good practice to evaluate your classifier is to grid search, train and test it many many times. 
 
-![Classifier Evaluation Pipeline](../images/ClassifierTestingPipeline.JPG)
+![ROC Space curve](../images/ROCplot_Exp1_positive&negative.png)
 
 In this post I will not delve into explaining the saint train-test-evaluate triology, neither will dig into elaborating the mechanics of k-fold cross-validation or grid search because I assume it is must-know basics of which readers are already aware. Instead in this post I want to emphasize the importance to run train-test-evaluate procedure for many times as the image above suggests. This will give you the true picture on how stable is your classifier and how capable it is to capture the true underlying patterns and not the noise. Actually, this was my very first big lesson learned when I started the dissertation, because at the beginning I thought one run with cross-validated grid search will suffice. 
 
