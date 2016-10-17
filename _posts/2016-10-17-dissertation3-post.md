@@ -9,11 +9,11 @@ Since now we have evaluation results from many iterations, we would like to chec
 ![ROC Space curve](../images/ROCplot_Exp1_positive&negative.png)
 
 In addition to averaged AUC, specificity and sensitivity as a performance diagnostics I plotted averaged ROC Space curve. It represents averaged sensitivity and specificity metrics over number of iterations on ROC plot with 95% confidence interval error bars.
-I used simplified version of ROC Space curve with only one point depicted. Nevrtheless, more sophisticated versions of averaging ROC Space curves exist - merging all iterations into 1 curve, vertical averaging, threshold averaging <sup>1</sup>.
+I used simplified version of ROC Space curve with only one point depicted. Nevertheless, more sophisticated versions of averaging ROC Space curves exist - merging all iterations into one curve, vertical averaging, threshold averaging <sup>1</sup>.
 
-The interpretation of such curve is straight forward - the most desirable performance outcome would result in dots placed on the furthest upper left corner with narrow confidence intervals. In our case the error bars are sufficiently narrow confirming stable performance of classifiers per varying train/test splits, though the true positive rate (or sensitivity) is too low.
+The interpretation of such curve is straight forward - the most desirable performance outcome would result in points placed on the furthest upper left corner with narrow confidence intervals. In our case the error bars are sufficiently narrow confirming stable performance of classifiers per varying train/test splits, though the true positive rates (or sensitivity) are too low.
 
-Below I share the code stubs for plotting averaged ROC Space curve, similar to one above in the image.
+Below I share code stubs for plotting averaged ROC Space curve, similar to one above in the image.
 
 
 ```python
@@ -21,9 +21,9 @@ def ROCSpace_1point(pred_truthLabels):
     '''
     This function takes as input predefined dataframe with results of experimental runs for one classifier 
     and returns a plot of averaged ROC space curve.
-    pred_truthLabels: dataframe for one classifier - 2 columns: 'Truth' with lists of true labels and 
-    'PredLabels' with lists of predicted labels, 
-    each row represents different iteration of experiment.
+    pred_truthLabels: dataframe - for one classifier containing 2 columns: 'Truth' with lists of true labels and 
+    'PredLabels' with lists of predicted labels, each row represents different iteration of experiment, 
+    eg. if experiment was run 100 times there should be 100 rows in the dataframe.
     '''
 
     plt.figure(figsize=[10,10])
