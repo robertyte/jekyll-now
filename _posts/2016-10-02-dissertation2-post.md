@@ -23,7 +23,7 @@ def ClassificationCVAndShuffleSplit(X, y, iterations):
      returns dataframe with AUC results.
      X: pandas dataframe - data set with independent variables. 
      y: list,array - dependent variable
-     iterations: integer - number of random train/test splits
+     iterations: integer - number of runs of experiment
     '''
 
     names = [ 
