@@ -16,7 +16,7 @@ Have in mind that the first step of rebalancing might be necessary only in case 
 In the scientific articles I have seen very wide range of iterations (from 10 to hundreds), but my supervisor would always say that >1,000 is what should be sought in research. I'd say it depends on circumstances: the goal or complexity of the research topic, data size, time you have to run experiments, machines you use, stability and complexity of algorithms and, of course, what level of research perfection you want to achieve. I ran my experiments for 20-50 times. My standard deviations of evaluation metrics were very low, indicating that models are stable, thus running additional 950 times most likely would not add anything new to it. In commercial environment most likely you would aim for quicker but not necessarily perfect results, thus number of runs could even be as low as few ot ten.
 
 
-'''Python
+```python
         def ClassificationCVAndShuffleSplit(X, y, iterations):
             # X: pandas dataframe - data set with independent variables. 
             # y: list,array - dependent variable
@@ -72,4 +72,4 @@ In the scientific articles I have seen very wide range of iterations (from 10 to
                         exp.loc[i,name+'_auc']=auc
                 i +=1        
             return exp
-'''
+```
