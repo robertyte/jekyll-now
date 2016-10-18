@@ -29,33 +29,125 @@ As always, below are provided code stubs for reproducing similarexperiment and t
 
 
 ```python
-def ROCSpace_1point(pred_truthLabels, model):
-    '''
-    This function takes as input predefined dataframe with results of experimental runs for one classifier 
-    and returns a plot of averaged ROC space curve.
-    pred_truthLabels: dataframe - for one classifier containing 2 columns: 'Truth' with lists of true labels and 
-    'PredLabels' with lists of predicted labels from test subsets. Each row represents different iteration of experiment, 
-    eg. if experiment was run 100 times there should be 100 rows in the dataframe.
-    model: string - name of classifier.
-    '''
+import matplotlib.pyplot as plt
 
-    plt.figure(figsize=[10,10])
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn import metrics
+from sklearn import cross_validation
+
+from sklearn.feature_selection import RFECV
+
+def CVRFE(X, y, iterations):
+    '''
+    This function runs CVRFE multiple times with four classifiers and for each classifier per each run records results of CVRFE in a dataframe exp.
+    X: pandas dataframe - data set with independent variables.
+    y: list,array - dependent variable
+    iterations: integer - number of random train/test splits
+    '''
+    names = [ 
+            "Logistic_regression", 
+            "Decision_Tree",
+            "Random_Forest", 
+            "AdaBoost" 
+            ]
+    classifiers = [
+        LogisticRegression(penalty = 'l2'),
+        DecisionTreeClassifier(max_depth=5),
+        RandomForestClassifier(max_depth=10, n_estimators=100, n_jobs=6),
+        AdaBoostClassifier(n_estimators=10)
+        ]
     
-    pred_truthLabels['Sensitivity'] = pred_truthLabels.apply(lambda x: metrics.recall_score(x['Truth'],x['PredLabels']), axis=1)
-    pred_truthLabels['Specificity'] = pred_truthLabels.apply(lambda x: 1.0-metrics.roc_curve(x['Truth'],x['PredLabels'])[0][1], axis=1)
-    xerror= 1.96*(1.0-pred_truthLabels['Specificity']).std()/np.sqrt(pred_truthLabels.shape[0])
-    yerror = 1.96*pred_truthLabels['Sensitivity'].std()/np.sqrt(pred_truthLabels.shape[0])
-    xmean = (1.0-pred_truthLabels['Specificity']).mean()
-    ymean = pred_truthLabels['Sensitivity'].mean()
+    columns = [[name+'_selectedFeatures', name+'_auc',  name+'_sensitivity', name+'_specificity'] for name in names]
+    columns = sum(columns,[])
+    exp = pd.DataFrame(columns=columns)
+    rs = cross_validation.ShuffleSplit(len(y), n_iter=iterations, test_size=.25, random_state=0)
+    i =0
+    y = np.array(y)
+    for train_index, test_index in rs:
+        for name, clf in zip(names, classifiers):
+                # prepare data
+                X_train = X.iloc[train_index] 
+                y_train = y[train_index]
+                X_test = X.iloc[test_index]
+                y_test = y[test_index]
+                # run RFECV on training data
+                clf_GS = RFECV(clf, step=1, cv=4, scoring='roc_auc', n_jobs = 6)
+                clf_GS.fit(X_train, y_train)
+                selectedFeat = clf_GS.support_
+                exp.loc[i,name+'_selectedFeatures'] = selectedFeat
+                # train model on reduced train data set 
+                clf.fit(X_train.loc[:,selectedFeat], y_train)
+                # test model on reduced test data set
+                pred_prob_class1 = clf.predict_proba(X_test.loc[:,selectedFeat])[:,1]
+                pred_label = clf.predict(X_test.loc[:,selectedFeat])
+                auc = metrics.roc_auc_score(y_test, pred_prob_class1)
+                
+                exp.loc[i,name+'_auc']=auc
+                exp.loc[i,name+'_sensitivity']= metrics.recall_score(y_test,pred_label)
+                exp.loc[i,name+'_specificity']= 1.0-metrics.roc_curve(y_test,pred_label)[0][1]
+        i +=1        
+    return exp
+
+def analyseFeats(exp):
+    '''
+    This function takes the dataframe exp and transforms it to rows as features, columns as models, cells as number of times the feature was selected to retain in the model.
+    exp: dataframe - a dataframe with predefined structure returned by function CVRFE.
+    '''
+    names = [ 
+            "Logistic_regression",  
+            "Decision_Tree",
+            "Random_Forest", 
+            "AdaBoost" 
+            ]
+ 
+    df = exp.ix[:,[name+'_selectedFeatures' for name in names]]
+    analysisDF = pd.DataFrame(columns=names)
     
-    plt.errorbar([0,xmean,1], [0,ymean,1], 
-                 yerr=[[0,yerror,0], [0,yerror,0]], xerr=[[0,xerror,0], [0,xerror,0]], 
-                 linestyle = ':',elinewidth=2,linewidth = 1, label =model)
-    plt.plot([0, 1], [0, 1], 'k--')
-    plt.legend(loc='lower right')
-    plt.xlabel('False positive rate')
-    plt.ylabel('True positive rate')
-    plt.title(title)
-    plt.show()
+    for name in names:
+        df[name+'_selectedFeatures'] = df[name+'_selectedFeatures'].apply(lambda x: [i =='True' for i in x[1:-1].split()])
+        featsTotal = map(sum, zip(df[name+'_selectedFeatures'][0], df[name+'_selectedFeatures'][1]))
+        for i in range(1, len(df[name+'_selectedFeatures'])):
+            featsTotal = map(sum, zip(df[name+'_selectedFeatures'][i], featsTotal))
+        analysisDF[name] = featsTotal
+    
+    return analysisDF
+
+
+# run CVRFE experiments with inputs: X, y, iterations
+exp = CVRFE(X, y, iterations)
+analysisDF = analyseFeats(exp)
+
+# First plot
+models = ["Logistic_regression",  
+            "Decision_Tree",
+            "Random_Forest", 
+            "AdaBoost" ]
+for m in models:
+    x = [l+x for x in range(0,analysisDF.shape[0])]
+    y = analysisDF.ix[:, m]
+    plt.plot(x, y, 'o', label= m)
+plt.title('Avg. frequency variables', size = 14)
+plt.xticks(x, x)
+plt.xlim(-0.5,79)
+plt.ylabel('times selected', size = 14)
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),fancybox=True, shadow=True, ncol=5)
+plt.show()
+
+# Second plot
+x = [l+x for x in range(0,analysisDF.shape[0])]
+y = analysisDF.ix[:, ["Decision_Tree", "Random_Forest", "AdaBoost"]].mean(axis=1)
+error = analysisDF.ix[:, ["Decision_Tree", "Random_Forest", "AdaBoost"]].std(axis=1).values
+plt.errorbar(x, y, yerr=error, fmt='o',label= 'Averaged DT, RF, AdaBoost')
+plt.title('Avg. frequency variables', size = 14)
+plt.xticks(x, x)
+plt.xlim(-0.5,79)
+plt.ylim(-10,60)
+plt.ylabel('times selected', size = 14)
+plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),fancybox=True, shadow=True, ncol=5)
+plt.show()
 ```
-<sup>1</sup> Fawcett, T. (2005) "An introduction to ROC analysis". Pattern Recognition Letters 27 (2006) 861–874.
+
