@@ -6,10 +6,14 @@ tag: []
 
 And now about my creative approach to analyse feature importance with cross-validated recursive feature elimination method from sklearn.
 
-![ROC Space curve](../images/ROCplot_Exp1_positive&negative.png)
+
+
+![ROC Space curve](../images/CVRFE_analysisOfFeats.png)
 
 In addition to averaged AUC, specificity and sensitivity as a performance diagnostics I plotted averaged ROC Space curve. It represents averaged sensitivity and specificity metrics over number of iterations on ROC plot with 95% confidence interval error bars.
 I used simplified version of ROC Space curve with only one point depicted. Nevertheless, more sophisticated versions of averaging ROC Space curves exist - merging all iterations into one curve, vertical averaging, threshold averaging <sup>1</sup>.
+
+![ROC Space curve](../images/CVRFE_analysisOfFeats_onlyTrees.png)
 
 The interpretation of such curve is straight forward - the most desirable performance outcome would result in points placed on the furthest upper left corner with narrow confidence intervals. In our case the error bars are sufficiently narrow confirming stable performance of classifiers per varying train/test splits, though the true positive rates (or sensitivity) are too low.
 
