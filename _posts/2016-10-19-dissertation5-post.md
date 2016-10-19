@@ -14,88 +14,80 @@ The results revealed that One Class SVM did not do a good job at my specific dat
 
 But that is not always the case, the success (or failure) of One Class SVM is data set dependent. And it cna be measured empirically. 
 
-One Class SVM with RBF kernel has two parameters - gamma and \nu (nu) - which are empirically set. Nevertheless, because of distinct nature of the learning process standard cross-validated grid search methods from _sklearn_ cannot be used to find the best fitting parameters
-```python
-from sklearn.feature_selection import RFECV
-```
-
-With each of four classifiers I repeated RFECV for 50 runs and averaged outcomes. The results were as follows: in average logistic regression retained 230 out of 240 variables, decision tree - 75, random forest - 73, AdaBoost - 33. The decrease of avg. AUC in most of the cases was marginal - logistic regression, random forest and AdaBoost detoriorated only by 2%, decision tree - by 12%. This confirms a major improvement in computational efficiency of the task (especially in the tree based classifiers) and redundancy of many features. 
-
-For further analysis I plot features on x-axis and on y-axis the number of times (out of 50) when feature was chosen for inclusion in the final reduced model. (below for simplicity reasons I depict only a fraction of 78 features out of all 240)
-
-![ROC Space curve](../images/CVRFE_analysisOfFeats.png)
-
-It is quite clear that some features are more dispersed than the others. E.g. features 6, 71-74 are unanimously selected by all 4 models in majority of the runs. Contrary, all models cannot agree on 53, 67 features. To better visualize this disagreement I further exclude logistic regression from the analysis, average 'times selected' of remaining three models - decision tree, random forest and AdaBoost - and add error bars, which results in following plot.  
-
-![ROC Space curve](../images/CVRFE_analysisOfFeats_onlyTrees.png)
-
-The longer the whiskers of error bars the more disagreement between three classifiers, while short whiskers and high position of dots indicate big importance of the feature across all models.
-
-As always, below are provided code stubs for reproducing similarexperiment and the plots.
+One Class SVM with RBF kernel has two parameters - gamma and nu - which are empirically set. Nevertheless, because of distinct nature of the learning setting standard cross-validated grid search methods from _sklearn_ cannot be used to find the best fitting parameters. Thus I provide code stubs 've written myself to empirically find the best parameters and train the One Class SVM.
 
 
 ```python
-import matplotlib.pyplot as plt
-
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import RandomForestClassifier
-
+import numpy as np
+import pandas as pd
+from sklearn.svm import OneClassSVM
 from sklearn import metrics
 from sklearn import cross_validation
 
-from sklearn.feature_selection import RFECV
-
-def CVRFE(X, y, iterations):
+def OneClassSVM_gridSearch(positive_train, negative_train, n_folds, n):
     '''
-    This function runs CVRFE multiple times with four classifiers and for each classifier per each run records results of CVRFE in a dataframe exp.
-    X: pandas dataframe - data set with independent variables.
-    y: list,array - dependent variable
-    iterations: integer - number of random train/test splits
-    '''
-    names = [ 
-            "Logistic_regression", 
-            "Decision_Tree",
-            "Random_Forest", 
-            "AdaBoost" 
-            ]
-    classifiers = [
-        LogisticRegression(penalty = 'l2'),
-        DecisionTreeClassifier(max_depth=5),
-        RandomForestClassifier(max_depth=10, n_estimators=100, n_jobs=6),
-        AdaBoostClassifier(n_estimators=10)
-        ]
+    This function returns trained model with best parameters of gamma for RBF kernel and nu.
+    positive_train: pandas dataframe - positive samples with independent variables for grid search. Normalized if needed.
+    negative_train: pandas dataframe - negative samples with independent variables for grid search. Normalized if needed. negative_train dataframe must be of the same size (rows and columns) as positive_train.
+    n_folds: integer - number of folds in grid search.
+    n: integer - index of iteration.
     
-    columns = [[name+'_selectedFeatures', name+'_auc',  name+'_sensitivity', name+'_specificity'] for name in names]
-    columns = sum(columns,[])
+    clf = OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+    # set a range of possible parameters' values for grid searching.
+    gamma=[0.00000001,0.0000001,0.000001,0.00001,0.0001, 0.001, 0.01]
+    nu=[0.00001, 0.0001, 0.001, 0.01]
+    
+    columns = ['iterationNo','gamma', 'nu', 'avgScore']
     exp = pd.DataFrame(columns=columns)
-    rs = cross_validation.ShuffleSplit(len(y), n_iter=iterations, test_size=.25, random_state=0)
-    i =0
-    y = np.array(y)
-    for train_index, test_index in rs:
-        for name, clf in zip(names, classifiers):
-                # prepare data
-                X_train = X.iloc[train_index] 
-                y_train = y[train_index]
-                X_test = X.iloc[test_index]
-                y_test = y[test_index]
-                # run RFECV on training data
-                clf_GS = RFECV(clf, step=1, cv=4, scoring='roc_auc', n_jobs = 6)
-                clf_GS.fit(X_train, y_train)
-                selectedFeat = clf_GS.support_
-                exp.loc[i,name+'_selectedFeatures'] = selectedFeat
-                # train model on reduced train data set 
-                clf.fit(X_train.loc[:,selectedFeat], y_train)
-                # test model on reduced test data set
-                pred_prob_class1 = clf.predict_proba(X_test.loc[:,selectedFeat])[:,1]
-                pred_label = clf.predict(X_test.loc[:,selectedFeat])
-                auc = metrics.roc_auc_score(y_test, pred_prob_class1)
-                
-                exp.loc[i,name+'_auc']=auc
-                exp.loc[i,name+'_sensitivity']= metrics.recall_score(y_test,pred_label)
-                exp.loc[i,name+'_specificity']= 1.0-metrics.roc_curve(y_test,pred_label)[0][1]
-        i +=1        
-    return exp
+    # split the data into n_folds for cross-validation
+    kf = cross_validation.KFold(positive_train.shape[0], n_folds=n_folds)
+    for i, element in enumerate(itertools.product(gamma, nu)):
+        clf.set_params(gamma = element[0], nu = element[1])
+        score = 0.0
+        for kf_train, kf_test in kf:
+            # train model only on the positive class train folds
+            clf.fit(positive_train.iloc[kf_train])
+            # test model both on positive and negative classes test fold
+            X_test = positive_train.iloc[kf_test].append(negative_train.iloc[kf_test])
+            y_test = [1]*len(kf_test) + [-1]*len(kf_test)
+            score += metrics.accuracy_score(y_test, clf.predict(X_test))
+        # calculate average of all accuracy scores from test folds and store it in dataframe for later analysis
+        avgScore = score/n_folds
+        exp.loc[i,'iterationNo'] = n
+        exp.loc[i,'gamma'] = element[0]
+        exp.loc[i,'nu'] = element[1]
+        exp.loc[i,'avgScore'] = avgScore
+    # get parameters pair with the highest average score
+    best_gamma = exp.ix[exp['avgScore'].idxmax()]['gamma']
+    best_nu = exp.ix[exp['avgScore'].idxmax()]['nu']
+    # train One Class SVM with best parameters on full train set
+    clf.set_params(gamma = best_gamma, nu = best_nu)
+    return clf.fit(positive_train)
+
+# use the above defined function to run 50 iterations of training and evaluating One Class SVM
+# positive: dataframe with all positive class instances and their dependent variables
+# negative: dataframe with negative class instances (>= # of positive class instance) and their dependent variables
+iterations = 50
+rs = cross_validation.ShuffleSplit(positive.shape[0], n_iter=iterations, test_size=.25, random_state=0)
+
+OCSVM = pd.DataFrame(columns=['Sensitivity', 'Sepcificity', 'g-mean', 'Precision'])
+for n, (train_index, test_index) in enumerate(rs):
+    # prepare training data
+    positive_train = positive.iloc[train_index] 
+    negative_train = negative.iloc[train_index]
+    #train the model
+    n_folds = 4
+    clf = OneClassSVM_gridSearch_Score(positive_train, negative_train, n_folds, n)
+    # test and evaluate the model
+    y_predict = clf.predict(positive.iloc[test_index].append(negative.iloc[test_index]))
+    y_true = [1]*len(test_index)+[-1]*len(test_index)
+    sensitivity= metrics.recall_score(y_true, y_predict)
+    specificity = 1.0-metrics.roc_curve(y_true,y_predict)[0][1]
+    #save the results for further analysis
+    OCSVM.loc[n,'Sensitivity'] = sensitivity
+    OCSVM.loc[n,'Sepcificity'] = specificity
+    OCSVM.loc[n,'g-mean'] = np.sqrt(sensitivity*specificity)
+    OCSVM.loc[n,'Precision'] = metrics.precision_score(y_true, y_predict)
+    print "Done with iteration no.: ", n
 ```
 
