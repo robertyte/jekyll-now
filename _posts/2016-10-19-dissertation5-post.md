@@ -6,9 +6,15 @@ tag: []
 
 When your Two Class learning process suffers from heterogeneity in the positive class and severe class imbalance, One Class SVM can come in handy.
 
-To start from the aim, I was seeking to understand which variables are redundant, correlated and thus introduce noise into the models, and which variables are the most deterministic. Thus, I was expecting that elimination of features would improve the overall performance or, at least, reduce the computational complexity by reducing dimensionality (I had 240 variables at the beginning). 
+One Class SVM is an unsupervised algorithm that learns a decision function for novelty (or anomalies) detection: classifying new data as similar or different to the training set. By just providing training data of one class, an algorithm creates a representational model of this data. If newly encountered data is too different, according to some measurement, from this model, it is labelled as out-of-class. Very nice explanation of mechanics and parameters of One CLass SVM could be found in [Scholkopf, B. et al. (2000) Support Vector Method for Novelty Detection. MIT Press (2000)].
 
-To conduct the experiment I used the following function. It is important to note that only those estimators can be used within RFECV which have _coef_ as an attribute available, e.g. SVM with RBF kernel and Naive Bayes classifier could not be used, thus I ran experiments only with logistic regression, decision tree, random forest and AdaBoost estimators. 
+I used One Class SVM with RBF kernel to tackle two issues within the data set of dissertation. Firstly, positive class possessed high heterogeneity, thus I assumed learning the core cluster of positive cases and omitting the outlying instances could improve performance. Secondly, there was a severe imbalance of 1:138.000 positive vs. negative instances within data set, thus any conventional two class models becomes incapable. And since one Class SVM model learns only on the minority class the imbalance and big data issue becomes obsolete.
+
+The results revealed that One Class SVM did not do a good job at my specific data set. At the end too many of test instances were classified as positive and thus the sensitivity went up but specificity plunged. It could indicate that the heterogeneity of positive group could not be tackled and so model learned on wide spectrum of positive cases, which afterwards impeded classifier’s capability to distinguish many negative instances from positive ones.
+
+But that is not always the case, the success (or failure) of One Class SVM is data set dependent. And it cna be measured empirically. 
+
+One Class SVM with RBF kernel has two parameters - gamma and \nu (nu) - which are empirically set. Nevertheless, because of distinct nature of the learning process standard cross-validated grid search methods from _sklearn_ cannot be used to find the best fitting parameters
 ```python
 from sklearn.feature_selection import RFECV
 ```
