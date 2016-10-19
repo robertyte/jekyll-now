@@ -6,7 +6,7 @@ tag: []
 
 When your Two Class learning process suffers from heterogeneity in the positive class and severe class imbalance, One Class SVM can come in handy.
 
-One Class SVM is an unsupervised algorithm that learns a decision function for novelty (or anomalies) detection: classifying new data as similar or different to the training set. By just providing training data of one class, an algorithm creates a representational model of this data. If newly encountered data is too different, according to some measurement, from this model, it is labelled as out-of-class. Very nice explanation of mechanics and parameters of One CLass SVM could be found in [Scholkopf, B. et al. (2000) Support Vector Method for Novelty Detection. MIT Press (2000)].
+One Class SVM is an unsupervised algorithm that learns a decision function for novelty (or anomalies) detection: classifying new data as similar or different to the training set. By just providing training data of one class, an algorithm creates a representational model of this data. If newly encountered data is too different, according to some measurement, from this model, it is labelled as out-of-class. Very nice explanation of mechanics and parameters of One Class SVM could be found in [Scholkopf, B. et al. (2000) Support Vector Method for Novelty Detection. MIT Press (2000)].
 
 I used One Class SVM with RBF kernel to tackle two issues within the data set of dissertation. Firstly, positive class possessed high heterogeneity, thus I assumed learning the core cluster of positive cases and omitting the outlying instances could improve performance. Secondly, there was a severe imbalance of 1:138.000 positive vs. negative instances within data set, thus any conventional two class models becomes incapable. And since one Class SVM model learns only on the minority class the imbalance and big data issue becomes obsolete.
 
@@ -14,7 +14,7 @@ The results revealed that One Class SVM did not do a good job at my specific dat
 
 But that is not always the case, the success (or failure) of One Class SVM is data set dependent. And it cna be measured empirically. 
 
-One Class SVM with RBF kernel has two parameters - gamma and nu - which are empirically set. Nevertheless, because of distinct nature of the learning setting standard cross-validated grid search methods from _sklearn_ cannot be used to find the best fitting parameters. Thus I provide code stubs 've written myself to empirically find the best parameters and train the One Class SVM.
+One Class SVM with RBF kernel has two parameters - gamma and nu - which are empirically set. Nevertheless, because of distinct nature of the learning setting standard cross-validated grid search methods from _sklearn_ cannot be used to find the best fitting parameters. Thus I provide code stubs I've written myself to empirically find the best parameters and train the One Class SVM.
 
 
 ```python
@@ -31,7 +31,8 @@ def OneClassSVM_gridSearch(positive_train, negative_train, n_folds, n):
     negative_train: pandas dataframe - negative samples with independent variables for grid search. Normalized if needed. negative_train dataframe must be of the same size (rows and columns) as positive_train.
     n_folds: integer - number of folds in grid search.
     n: integer - index of iteration.
-    
+    '''
+   
     clf = OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
     # set a range of possible parameters' values for grid searching.
     gamma=[0.00000001,0.0000001,0.000001,0.00001,0.0001, 0.001, 0.01]
@@ -69,7 +70,6 @@ def OneClassSVM_gridSearch(positive_train, negative_train, n_folds, n):
 # negative: dataframe with negative class instances (>= # of positive class instance) and their dependent variables
 iterations = 50
 rs = cross_validation.ShuffleSplit(positive.shape[0], n_iter=iterations, test_size=.25, random_state=0)
-
 OCSVM = pd.DataFrame(columns=['Sensitivity', 'Sepcificity', 'g-mean', 'Precision'])
 for n, (train_index, test_index) in enumerate(rs):
     # prepare training data
