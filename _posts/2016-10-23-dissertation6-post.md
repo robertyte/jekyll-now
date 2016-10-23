@@ -153,7 +153,7 @@ sc
     .map(makeRow)
     .repartition(5) # number of repartitions depend on size of the data, how fast is the algorithm to undersample, how many cases you'd like to have at the end of under-sampling, etc.
     .mapPartitions(PSS_faster_spark)
-    .repartition(1)
+    .repartition(1) # this step collect the results from the preceeding 5 partitions into one partition which enables us to save results in one file instead of many of them. On computer cluster you should use it with caution because this function collects all remaining data to one machine. If the data is too big the worker may crash.
     .saveAsTextFile('url.....csv')
 )
 
